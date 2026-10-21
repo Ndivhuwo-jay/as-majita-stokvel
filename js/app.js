@@ -261,8 +261,11 @@
     e.preventDefault(); if (!db) { toast("Not connected to the database"); return; }
     const memberId = $("#pMember").value, date = $("#pDate").value, amount = Number($("#pAmount").value);
     if (!memberId || !date || !(amount > 0)) { toast("Choose a member, a date and an amount"); return; }
-    try { await db.collection("payments").add({ memberId, date, amount, note: $("#pNote").value.trim(), createdAt: new Date().toISOString() });
-      $("#pNote").value = ""; toast(`${R(amount)} saved${parseDate(date).d > RULES.CUTOFF_DAY ? " (late, after the 7th)" : ""}`); }
+    try {
+      // Firestore resolves add() only once the server has the record; don't wait forever if it can't be reached
+      const noReply = new Promise((_, reject) => setTimeout(() => reject(new Error("no reply from the database, check your internet connection")), 15000));
+      await Promise.race([db.collection("payments").add({ memberId, date, amount, note: $("#pNote").value.trim(), createdAt: new Date().toISOString() }), noReply]);
+      $("#pNote").value = ""; toast(`${R(amount)} saved${window.STOKVEL_BACKEND ? " to " + window.STOKVEL_BACKEND : " in this browser only"}${parseDate(date).d > RULES.CUTOFF_DAY ? " (late, after the 7th)" : ""}`); }
     catch (err) { toast("Could not save: " + (err.message || err.code)); }
   });
 

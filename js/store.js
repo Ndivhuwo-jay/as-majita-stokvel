@@ -21,6 +21,7 @@
       await b.commit();
     };
     // No sign-in: everyone shares the same Firestore records
+    window.STOKVEL_BACKEND = "Firestore";
     const seeded = seedIfEmpty().catch(() => {});
     window.claude = {
       use: async (name) => {
