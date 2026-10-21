@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>As Majita Stokvel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg: #f5f6f3;
+  --surface: #fcfcfb;
+  --ink: #15201c;
+  --ink-2: #4c5752;
+  --ink-3: #78827d;
+  --line: #dde2dc;
+  --line-2: #eceeea;
+  --accent: #1f4d3d;
+  --accent-ink: #f3f7f4;
+  --accent-soft: #e2ece6;
+  --s1: #2a78d6;
+  --s2: #eb6834;
+  --good: #0f7a2e; --good-bg: #e2f2e5;
+  --warn: #8a5a00; --warn-bg: #fbefcf;
+  --bad: #b3401c; --bad-bg: #fbe3d8;
+  --crit: #a32626; --crit-bg: #f6dcdc;
+  --mute: #5d6661; --mute-bg: #e8ebe8;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121614; --surface: #1a1f1c; --ink: #edf1ee; --ink-2: #b9c2bc; --ink-3: #8b958f;
+  --line: #2e3631; --line-2: #232a26; --accent: #8fd1b2; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --s1: #3987e5; --s2: #d95926;
+  --good: #6fd38a; --good-bg: #183323; --warn: #f2c35b; --warn-bg: #3a2f14; --bad: #f29673; --bad-bg: #3d2219;
+  --crit: #f08484; --crit-bg: #3d1c1c; --mute: #aab3ad; --mute-bg: #2a302c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121614; --surface: #1a1f1c; --ink: #edf1ee; --ink-2: #b9c2bc; --ink-3: #8b958f;
+  --line: #2e3631; --line-2: #232a26; --accent: #8fd1b2; --accent-ink: #0f1a15; --accent-soft: #1f3129;
+  --s1: #3987e5; --s2: #d95926;
+  --good: #6fd38a; --good-bg: #183323; --warn: #f2c35b; --warn-bg: #3a2f14; --bad: #f29673; --bad-bg: #3d2219;
+  --crit: #f08484; --crit-bg: #3d1c1c; --mute: #aab3ad; --mute-bg: #2a302c; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: 1.25rem; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 700; }
+.label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--ink-2); }
+.small { font-size: 0.85rem; }
+
+header.top { background: var(--accent); color: var(--accent-ink); }
+header.top .wrap { padding-block: 22px 18px; display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: end; justify-content: space-between; }
+header.top h1 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 700; line-height: 1.05; }
+header.top .sub { opacity: 0.85; font-size: 0.9rem; margin-top: 4px; }
+.yearbox { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.yearbox select { font: inherit; font-weight: 600; padding: 6px 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent-ink) 40%, transparent); background: transparent; color: var(--accent-ink); }
+.yearbox select option { color: var(--ink); background: var(--surface); }
+.countdown { font-size: 0.9rem; opacity: 0.9; }
+.countdown b { font-family: var(--font-display); font-size: 1.3rem; }
+
+nav.tabs { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+nav.tabs .wrap { display: flex; gap: 4px; overflow-x: auto; }
+nav.tabs button { font: inherit; font-weight: 600; color: var(--ink-2); background: none; border: 0; padding: 12px 14px; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+nav.tabs button:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+
+main .wrap { padding-block: 22px 60px; display: grid; gap: 22px; }
+.banner { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: var(--r); background: var(--warn-bg); color: var(--ink); border: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 22px; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--surface); padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.kpi .v { font-family: var(--font-display); font-size: 1.65rem; font-weight: 700; line-height: 1.15; }
+.kpi .v.hero { color: var(--accent); }
+.kpi .d { font-size: 0.82rem; color: var(--ink-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.st-good { color: var(--good); background: var(--good-bg); }
+.st-late { color: var(--warn); background: var(--warn-bg); }
+.st-arrears { color: var(--bad); background: var(--bad-bg); }
+.st-expelled { color: var(--crit); background: var(--crit-bg); }
+.st-withdrawn { color: var(--mute); background: var(--mute-bg); }
+
+.chartbox { position: relative; height: 260px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.82rem; color: var(--ink-2); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+.tablewrap { overflow-x: auto; margin: 0 -4px; padding: 0 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { padding: 9px 10px; text-align: left; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
+th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); font-weight: 600; border-bottom-color: var(--line); vertical-align: bottom; }
+td.r, th.r { text-align: right; }
+tfoot td { font-weight: 700; border-top: 1px solid var(--line); border-bottom: 0; }
+tr.click { cursor: pointer; }
+tr.click:hover td { background: var(--line-2); }
+tr.open td { background: var(--accent-soft); }
+.neg { color: var(--bad); }
+.dim { color: var(--ink-3); }
+
+.months { display: grid; grid-template-columns: repeat(12, 18px); gap: 3px; }
+.mc { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font-size: 0.6rem; font-weight: 700; }
+.mc.ontime { background: var(--good); color: var(--surface); }
+.mc.late { background: var(--warn-bg); color: var(--warn); box-shadow: inset 0 0 0 2px var(--warn); }
+.mc.missed { background: var(--bad); color: var(--surface); }
+.mc.overdue { background: var(--surface); color: var(--bad); box-shadow: inset 0 0 0 2px var(--bad); }
+.mc.pending, .mc.future { background: var(--line-2); box-shadow: inset 0 0 0 1px var(--line); }
+.mc.na, .mc.withdrawn { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
+.mc.expelled { background: var(--crit-bg); color: var(--crit); }
+.monthhead { display: grid; grid-template-columns: repeat(12, 18px); gap: 3px; font-size: 0.6rem; color: var(--ink-3); }
+.monthhead span { text-align: center; }
+.keyrow { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; color: var(--ink-2); align-items: center; }
+.keyrow .mc { display: inline-grid; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; }
+
+.detail { display: grid; gap: 14px; padding: 6px 2px 10px; }
+#memberDetail { border-top: 2px solid var(--accent); margin-top: 12px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px 18px; }
+.facts div { display: grid; gap: 2px; }
+.facts b { font-variant-numeric: tabular-nums; }
+
+form.entry { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
+textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; min-height: 120px; }
+.btn { font: inherit; font-weight: 600; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; cursor: pointer; white-space: nowrap; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+.btn.sm { padding: 4px 10px; font-size: 0.82rem; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hint { font-size: 0.82rem; color: var(--ink-2); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; z-index: 20; max-width: calc(100% - 32px); }
+.empty { padding: 28px 12px; text-align: center; color: var(--ink-2); }
+.calc { display: grid; gap: 6px; max-width: 520px; }
+.calc div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px dashed var(--line); padding-bottom: 4px; }
+.calc div.total { border-bottom: 0; font-weight: 700; font-size: 1.05rem; }
+
+.rules { display: grid; gap: 14px; max-width: 760px; }
+.rule { display: grid; grid-template-columns: 54px 1fr; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--line-2); }
+.rule .clause { font-family: var(--font-display); font-weight: 700; color: var(--accent); }
+.rule p + p { margin-top: 6px; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div>
+      <h1>As Majita Stokvel</h1>
+      <p class="sub" id="asOf">Savings ledger</p>
+    </div>
+    <div class="yearbox">
+      <p class="countdown" id="countdown"></p>
+      <label class="label" for="yearSel" style="color:inherit;opacity:.8">Year</label>
+      <select id="yearSel"></select>
+      <button class="btn sm" id="signOut" hidden>Sign out</button>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="wrap" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button role="tab" data-tab="members" aria-selected="false">Members</button>
+    <button role="tab" data-tab="payments" aria-selected="false">Payments</button>
+    <button role="tab" data-tab="payout" aria-selected="false">December payout</button>
+    <button role="tab" data-tab="rules" aria-selected="false">Rules</button>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div class="banner" id="noDb" hidden>
+      <p>Sign in with Google to see the Stokvel records.</p>
+      <button class="btn sm" id="signIn">Sign in with Google</button>
+    </div>
+
+    <section data-panel="overview" style="display:grid;gap:22px">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><h2>Collected per month</h2>
+            <div class="legend"><span><i style="background:var(--s1)"></i>By the 7th</span><span><i style="background:var(--s2)"></i>After the 7th (late)</span></div>
+          </div>
+          <div class="chartbox"><canvas id="barChart" aria-label="Bar chart of money collected per month"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Money in the account</h2><span class="hint">Running total, less early withdrawals</span></div>
+          <div class="chartbox"><canvas id="lineChart" aria-label="Line chart of the cumulative balance"></canvas></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Monthly totals</h2><span class="hint">Payments are counted in the month they were made</span></div>
+        <div class="tablewrap"><table id="monthTable"></table></div>
+      </div>
+    </section>
+
+    <section data-panel="members" hidden style="display:grid;gap:22px">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Member ledger</h2>
+          <div class="keyrow">
+            <span><span class="mc ontime"></span>Paid by 7th</span>
+            <span><span class="mc late"></span>Paid late</span>
+            <span><span class="mc missed"></span>Missed (R50)</span>
+            <span><span class="mc overdue"></span>Overdue now</span>
+            <span><span class="mc future"></span>Not yet due</span>
+          </div>
+        </div>
+        <div class="tablewrap"><table id="ledgerTable"></table></div>
+        <div id="memberDetail" hidden></div>
+        <p class="hint" style="margin-top:10px">Select a member to see their payments, what they owe and how their savings were worked out.</p>
+      </div>
+      <div class="panel writer">
+        <div class="panel-head"><h2>Add a member</h2><span class="hint">Admission needs a majority vote (3.2)</span></div>
+        <form class="entry" id="memberForm">
+          <div class="field"><label for="mName">Full name</label><input id="mName" required placeholder="e.g. Rendani Netshitenzhe"></div>
+          <div class="field"><label for="mJoined">First contribution month</label><input id="mJoined" type="month" required></div>
+          <div class="field"><label for="mRole">Role (optional)</label><select id="mRole"><option value="">Member</option><option>Chairperson</option><option>Treasurer</option><option>Secretary</option></select></div>
+          <button class="btn primary" type="submit">Add member</button>
+        </form>
+      </div>
+    </section>
+
+    <section data-panel="payments" hidden style="display:grid;gap:22px">
+      <div class="panel writer">
+        <div class="panel-head"><h2>Record a payment</h2><span class="hint" id="payHint">Minimum R300. Due by the 7th.</span></div>
+        <form class="entry" id="payForm">
+          <div class="field"><label for="pMember">Member</label><select id="pMember" required></select></div>
+          <div class="field"><label for="pDate">Date received</label><input id="pDate" type="date" required></div>
+          <div class="field"><label for="pAmount">Amount (R)</label><input id="pAmount" type="number" min="1" step="0.01" required value="300"></div>
+          <div class="field"><label for="pNote">Note (optional)</label><input id="pNote" placeholder="e.g. EFT ref"></div>
+          <button class="btn primary" type="submit">Save payment</button>
+        </form>
+        <p class="hint" id="suggest" style="margin-top:10px"></p>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Payments in <span class="yr"></span></h2>
+          <div class="row">
+            <select id="payFilter" aria-label="Filter by member" style="width:auto"></select>
+            <button class="btn sm" id="exportPayments">Export payments CSV</button>
+            <button class="btn sm" id="exportLedger">Export ledger CSV</button>
+          </div>
+        </div>
+        <div class="tablewrap"><table id="payTable"></table></div>
+      </div>
+      <div class="panel writer">
+        <div class="panel-head"><h2>Import payments from CSV</h2><span class="hint">Columns: member, date, amount, note</span></div>
+        <div style="display:grid;gap:10px">
+          <div class="row"><input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto;max-width:100%"><span class="hint">or paste below</span></div>
+          <textarea id="csvText" placeholder="member,date,amount,note&#10;Rendani Netshitenzhe,2026-01-05,300,&#10;Rendani Netshitenzhe,2026-02-09,300,late"></textarea>
+          <div class="row"><button class="btn" id="csvPreview">Check file</button><button class="btn primary" id="csvImport" disabled>Import</button><span class="hint" id="csvMsg"></span></div>
+          <p class="hint">Dates can be 2026-01-05 or 05/01/2026. Names that are not in the register yet are added as new members from the month of their first payment.</p>
+        </div>
+      </div>
+      <div class="panel" id="exportBox" hidden>
+        <div class="panel-head"><h2 id="exportTitle">CSV</h2><button class="btn sm" id="copyCsv">Copy</button></div>
+        <textarea id="exportText" readonly></textarea>
+      </div>
+    </section>
+
+    <section data-panel="payout" hidden style="display:grid;gap:22px">
+      <div class="panel">
+        <div class="panel-head"><h2>20 December payout</h2><span class="hint">Projection assumes every active member pays R300 on time until December</span></div>
+        <div class="writer row" style="margin-bottom:14px">
+          <div class="field" style="max-width:260px"><label for="interestIn">Interest earned this year (R, from bank statement)</label><input id="interestIn" type="number" min="0" step="0.01"></div>
+          <button class="btn" id="saveInterest" style="align-self:end">Save interest</button>
+        </div>
+        <div class="tablewrap"><table id="payoutTable"></table></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h2 style="margin-bottom:12px">Where the money goes, projected</h2><div class="calc" id="fundCalc"></div></div>
+        <div class="panel"><h2 style="margin-bottom:12px">Kept by the Stokvel</h2><div class="calc" id="fundKept"></div>
+          <p class="hint" style="margin-top:12px">The constitution does not say how penalties and forfeited savings are used. Members can decide this by majority vote (12.3).</p></div>
+      </div>
+    </section>
+
+    <section data-panel="rules" hidden>
+      <div class="panel">
+        <h2 style="margin-bottom:14px">How the app applies the constitution</h2>
+        <div class="rules">
+          <div class="rule"><span class="clause">4</span><div><p><b>R300 minimum, due by the 7th.</b> A month counts as paid if any money arrives in that month. If the first payment of the month is dated after the 7th, the month is marked late. Paying more than R300 adds to your savings.</p><p class="muted small">Paying less than R300 is not a skipped month, but the shortfall shows as arrears.</p></div></div>
+          <div class="rule"><span class="clause">5</span><div><p><b>R50 penalty for a skipped month.</b> A month that ends with no payment at all is missed and costs R50. The next payment settles the penalty first, then the savings. Catching up after one missed month is R300 + R50 + R300 = R650.</p><p class="muted small">Penalties are fees to the Stokvel, so they are not part of anyone's savings.</p></div></div>
+          <div class="rule"><span class="clause">6</span><div><p><b>Payout on 20 December.</b> Each member receives their savings plus their share of interest.</p></div></div>
+          <div class="rule"><span class="clause">7</span><div><p><b>Early withdrawal.</b> A withdrawing member gets their savings on the day they leave, less any penalties still owed (7.4). No contributions are due after the withdrawal month. They only share in interest if they contributed for more than 7 months (7.3).</p><p><b>Stopping without withdrawing (7.2).</b> Each missed month adds a R50 penalty. Penalties still unpaid on 20 December are deducted from that member's savings.</p></div></div>
+          <div class="rule"><span class="clause">8</span><div><p><b>Interest.</b> Interest is shared in proportion to savings, only among members who contributed in more than 7 months of the year (8 or more).</p></div></div>
+          <div class="rule"><span class="clause">9</span><div><p><b>Expulsion.</b> Three missed months in a row means automatic expulsion. The member forfeits all savings, which stay with the Stokvel. The secretary records it in writing (9.3).</p></div></div>
+          <div class="rule"><span class="clause">10</span><div><p><b>Office bearers.</b> Chairperson Zwivhuya Rammela, Treasurer Vhanga Mudzunga, Secretary Ovhonala Makhera. The treasurer records payments and the interest figure here.</p></div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/seed-data.js"></script>
+<script src="js/store.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

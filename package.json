@@ -1,0 +1,10 @@
+{
+  "name": "as-majita-stokvel",
+  "version": "1.0.0",
+  "description": "Savings ledger and audit app for As Majita Stokvel: monthly contributions, penalties, member standing and the 20 December payout.",
+  "private": true,
+  "scripts": {
+    "test": "node test/engine.test.js",
+    "start": "npx --yes serve ."
+  }
+}

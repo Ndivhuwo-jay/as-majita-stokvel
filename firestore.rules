@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn(list) {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in list;
+    }
+    function isAdmin() { return signedIn(['you@gmail.com']); }
+    function isMember() { return isAdmin() || signedIn(['member1@gmail.com']); }
+
+    match /{col}/{id} {
+      allow read: if isMember() && col in ['members', 'payments', 'settings'];
+      allow write: if isAdmin() && col in ['members', 'payments', 'settings'];
+    }
+  }
+}
