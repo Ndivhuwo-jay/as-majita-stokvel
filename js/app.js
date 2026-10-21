@@ -258,7 +258,7 @@
   $("#mJoined").value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
 
   $("#payForm").addEventListener("submit", async (e) => {
-    e.preventDefault(); if (!db) return;
+    e.preventDefault(); if (!db) { toast("Not connected to the database"); return; }
     const memberId = $("#pMember").value, date = $("#pDate").value, amount = Number($("#pAmount").value);
     if (!memberId || !date || !(amount > 0)) { toast("Choose a member, a date and an amount"); return; }
     try { await db.collection("payments").add({ memberId, date, amount, note: $("#pNote").value.trim(), createdAt: new Date().toISOString() });
