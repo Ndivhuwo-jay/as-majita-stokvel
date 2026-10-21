@@ -70,8 +70,8 @@ Imports and payment exports use these columns:
 
 ```csv
 member,date,amount,note
-Rendani Netshitenzhe,2026-01-05,300,
-Rendani Netshitenzhe,2026-02-09,300,late
+Ndivhuwo Mathoma,2026-01-05,300,
+Ndivhuwo Mathoma,2026-02-09,300,late
 ```
 
 Dates can be `2026-01-05` or `05/01/2026`. A name that isn't in the register yet is added as a new member from the month of their first payment.
