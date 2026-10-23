@@ -108,16 +108,15 @@ tr.open td { background: var(--accent-soft); }
 .neg { color: var(--bad); }
 .dim { color: var(--ink-3); }
 
-.months { display: grid; grid-template-columns: repeat(12, 18px); gap: 3px; }
+.months { display: grid; grid-template-columns: repeat(11, 18px); gap: 3px; }
 .mc { width: 18px; height: 18px; border-radius: 4px; display: grid; place-items: center; font-size: 0.6rem; font-weight: 700; }
 .mc.ontime { background: var(--good); color: var(--surface); }
 .mc.late { background: var(--warn-bg); color: var(--warn); box-shadow: inset 0 0 0 2px var(--warn); }
 .mc.missed { background: var(--bad); color: var(--surface); }
-.mc.overdue { background: var(--surface); color: var(--bad); box-shadow: inset 0 0 0 2px var(--bad); }
 .mc.pending, .mc.future { background: var(--line-2); box-shadow: inset 0 0 0 1px var(--line); }
 .mc.na, .mc.withdrawn { background: transparent; box-shadow: inset 0 0 0 1px var(--line-2); }
 .mc.expelled { background: var(--crit-bg); color: var(--crit); }
-.monthhead { display: grid; grid-template-columns: repeat(12, 18px); gap: 3px; font-size: 0.6rem; color: var(--ink-3); }
+.monthhead { display: grid; grid-template-columns: repeat(11, 18px); gap: 3px; font-size: 0.6rem; color: var(--ink-3); }
 .monthhead span { text-align: center; }
 .keyrow { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 0.8rem; color: var(--ink-2); align-items: center; }
 .keyrow .mc { display: inline-grid; width: 14px; height: 14px; margin-right: 5px; vertical-align: -2px; }
@@ -192,7 +191,7 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
       <div class="grid2">
         <div class="panel">
           <div class="panel-head"><h2>Collected per month</h2>
-            <div class="legend"><span><i style="background:var(--s1)"></i>By the 7th</span><span><i style="background:var(--s2)"></i>After the 7th (late)</span></div>
+            <div class="legend"><span><i style="background:var(--s1)"></i>On time</span><span><i style="background:var(--s2)"></i>Late (after the 7th of the next month)</span></div>
           </div>
           <div class="chartbox"><canvas id="barChart" aria-label="Bar chart of money collected per month"></canvas></div>
         </div>
@@ -212,10 +211,9 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
         <div class="panel-head">
           <h2>Member ledger</h2>
           <div class="keyrow">
-            <span><span class="mc ontime"></span>Paid by 7th</span>
+            <span><span class="mc ontime"></span>Paid on time</span>
             <span><span class="mc late"></span>Paid late</span>
             <span><span class="mc missed"></span>Missed (R50)</span>
-            <span><span class="mc overdue"></span>Overdue now</span>
             <span><span class="mc future"></span>Not yet due</span>
           </div>
         </div>
@@ -236,10 +234,11 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
 
     <section data-panel="payments" hidden style="display:grid;gap:22px">
       <div class="panel writer">
-        <div class="panel-head"><h2>Record a payment</h2><span class="hint" id="payHint">Minimum R300. Due by the 7th.</span></div>
+        <div class="panel-head"><h2>Record a payment</h2><span class="hint" id="payHint">Minimum R300. Each month is due by the 7th of the next month.</span></div>
         <form class="entry" id="payForm">
           <div class="field"><label for="pMember">Member</label><select id="pMember" required></select></div>
           <div class="field"><label for="pDate">Date received</label><input id="pDate" type="date" required></div>
+          <div class="field"><label for="pMonth">For month</label><select id="pMonth" required></select></div>
           <div class="field"><label for="pAmount">Amount (R)</label><input id="pAmount" type="number" min="1" step="0.01" required value="300"></div>
           <div class="field"><label for="pNote">Note (optional)</label><input id="pNote" placeholder="e.g. EFT ref"></div>
           <button class="btn primary" type="submit">Save payment</button>
@@ -257,7 +256,7 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
         <div class="tablewrap"><table id="payTable"></table></div>
       </div>
       <div class="panel writer">
-        <div class="panel-head"><h2>Import payments from CSV</h2><span class="hint">Columns: member, date, amount, note</span></div>
+        <div class="panel-head"><h2>Import payments from CSV</h2><span class="hint">Columns: member, date, month, amount, note</span></div>
         <div style="display:grid;gap:10px">
           <div class="row"><input type="file" id="csvFile" accept=".csv,text/csv" style="width:auto;max-width:100%"><span class="hint">or paste below</span></div>
           <textarea id="csvText" placeholder="member,date,amount,note&#10;Ndivhuwo Mathoma,2026-01-05,300,&#10;Ndivhuwo Mathoma,2026-02-09,300,late"></textarea>
@@ -273,7 +272,7 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
 
     <section data-panel="payout" hidden style="display:grid;gap:22px">
       <div class="panel">
-        <div class="panel-head"><h2>20 December payout</h2><span class="hint">Projection assumes every active member pays R300 on time until December</span></div>
+        <div class="panel-head"><h2>15 December payout</h2><span class="hint">Projection assumes every active member pays R300 on time up to November</span></div>
         <div class="writer row" style="margin-bottom:14px">
           <div class="field" style="max-width:260px"><label for="interestIn">Interest earned this year (R, from bank statement)</label><input id="interestIn" type="number" min="0" step="0.01"></div>
           <button class="btn" id="saveInterest" style="align-self:end">Save interest</button>
@@ -291,10 +290,10 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
       <div class="panel">
         <h2 style="margin-bottom:14px">How the app applies the constitution</h2>
         <div class="rules">
-          <div class="rule"><span class="clause">4</span><div><p><b>R300 minimum, due by the 7th.</b> A month counts as paid if any money arrives in that month. If the first payment of the month is dated after the 7th, the month is marked late. Paying more than R300 adds to your savings.</p><p class="muted small">Paying less than R300 is not a skipped month, but the shortfall shows as arrears.</p></div></div>
-          <div class="rule"><span class="clause">5</span><div><p><b>R50 penalty for a skipped month.</b> A month that ends with no payment at all is missed and costs R50. The next payment settles the penalty first, then the savings. Catching up after one missed month is R300 + R50 + R300 = R650.</p><p class="muted small">Penalties are fees to the Stokvel, so they are not part of anyone's savings.</p></div></div>
-          <div class="rule"><span class="clause">6</span><div><p><b>Payout on 20 December.</b> Each member receives their savings plus their share of interest.</p></div></div>
-          <div class="rule"><span class="clause">7</span><div><p><b>Early withdrawal.</b> A withdrawing member gets their savings on the day they leave, less any penalties still owed (7.4). No contributions are due after the withdrawal month. They only share in interest if they contributed for more than 7 months (7.3).</p><p><b>Stopping without withdrawing (7.2).</b> Each missed month adds a R50 penalty. Penalties still unpaid on 20 December are deducted from that member's savings.</p></div></div>
+          <div class="rule"><span class="clause">4</span><div><p><b>R300 a month from January to November, due by the 7th of the next month.</b> October's contribution is due by 7 November, and November's, the last of the year, by 7 December. There is no December contribution. Each payment is recorded for the month it pays for. If a month's first payment arrives after its due date, the month is marked late. Paying more than R300 adds to your savings.</p><p class="muted small">Paying less than R300 is not a skipped month, but the shortfall shows as arrears.</p></div></div>
+          <div class="rule"><span class="clause">5</span><div><p><b>R50 penalty for a skipped month.</b> A month with no payment at all by the 7th of the next month is missed and costs R50. The next payment settles the penalty first, then the savings. Catching up after one missed month is R300 + R50 + R300 = R650.</p><p class="muted small">Penalties are fees to the Stokvel, so they are not part of anyone's savings.</p></div></div>
+          <div class="rule"><span class="clause">6</span><div><p><b>Payout on 15 December.</b> Each member receives their savings plus their share of interest.</p></div></div>
+          <div class="rule"><span class="clause">7</span><div><p><b>Early withdrawal.</b> A withdrawing member gets their savings on the day they leave, less any penalties still owed (7.4). No contributions are due after the withdrawal month. They only share in interest if they contributed for more than 7 months (7.3).</p><p><b>Stopping without withdrawing (7.2).</b> Each missed month adds a R50 penalty. Penalties still unpaid on 15 December are deducted from that member's savings.</p></div></div>
           <div class="rule"><span class="clause">8</span><div><p><b>Interest.</b> Interest is shared in proportion to savings, only among members who contributed in more than 7 months of the year (8 or more).</p></div></div>
           <div class="rule"><span class="clause">9</span><div><p><b>Expulsion.</b> Three missed months in a row means automatic expulsion. The member forfeits all savings, which stay with the Stokvel. The secretary records it in writing (9.3).</p></div></div>
           <div class="rule"><span class="clause">10</span><div><p><b>Office bearers.</b> Chairperson Zwivhuya Rammela, Treasurer Vhanga Mudzunga, Secretary Ovhonala Makhera. The treasurer records payments and the interest figure here.</p></div></div>

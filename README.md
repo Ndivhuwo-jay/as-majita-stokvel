@@ -1,12 +1,12 @@
 # As Majita Stokvel
 
-A savings ledger and audit app for As Majita Stokvel. Members contribute monthly and the savings, with interest, are paid out on 20 December. The app applies the Stokvel's constitution automatically and shows:
+A savings ledger and audit app for As Majita Stokvel. Members contribute monthly from January to November and the savings, with interest, are paid out on 15 December. The app applies the Stokvel's constitution automatically and shows:
 
-- Total collected per month (on time vs after the 7th) and the running account balance, as charts
+- Total collected per month (on time vs late) and the running account balance, as charts
 - A monthly totals table: collected, late, missed months, penalties, withdrawals
-- A member ledger with each member's 12 months and status: good standing, late, in arrears, withdrawn or expelled
+- A member ledger with each member's 11 months (January to November) and status: good standing, late, in arrears, withdrawn or expelled
 - What each member owes to get back in good standing
-- A 20 December payout projection, with each member's interest share
+- A 15 December payout projection, with each member's interest share
 - A form to record payments and add members, plus CSV import and export
 
 It is plain HTML and JavaScript. There is no build step and no server.
@@ -50,11 +50,11 @@ The Firebase web config is not a secret. Access is controlled by `firestore.rule
 
 | Clause | Rule in the app |
 |---|---|
-| 4.1–4.4 | R300 minimum per month, due by the 7th. A month's first payment dated after the 7th is marked late. Paying more than R300 adds to savings. |
-| 5.1–5.2 | A month with no payment at all is missed and costs a R50 penalty. The next payment settles the penalty first. Catching up after one missed month is R300 + R50 + R300 = R650. |
-| 6 | Payout on 20 December: savings plus share of interest. |
+| 4.1–4.4 | R300 a month from January to November (no December contribution), each due by the 7th of the next month (October by 7 November). Each payment is recorded for the month it pays for. A month whose first payment arrives after its due date is marked late. Paying more than R300 adds to savings. |
+| 5.1–5.2 | A month with no payment at all by the 7th of the next month is missed and costs a R50 penalty. The next payment settles the penalty first. Catching up after one missed month is R300 + R50 + R300 = R650. |
+| 6 | Payout on 15 December: savings plus share of interest. |
 | 7.1, 7.4 | A withdrawing member receives their savings less any unpaid penalties. Nothing is due after the withdrawal month. |
-| 7.2 | Penalties still unpaid on 20 December are deducted from that member's savings. |
+| 7.2 | Penalties still unpaid on 15 December are deducted from that member's savings. |
 | 7.3, 8.1–8.2 | Interest is shared in proportion to savings, only among members who contributed in more than 7 months (8 or more). |
 | 9.1–9.2 | Three missed months in a row means automatic expulsion and all savings are forfeited. |
 
@@ -69,12 +69,12 @@ The constitution does not cover some cases, so the app makes these choices:
 Imports and payment exports use these columns:
 
 ```csv
-member,date,amount,note
-Ndivhuwo Mathoma,2026-01-05,300,
-Ndivhuwo Mathoma,2026-02-09,300,late
+member,date,month,amount,note
+Ndivhuwo Mathoma,2026-02-05,2026-01,300,
+Ndivhuwo Mathoma,2026-03-09,2026-02,300,late
 ```
 
-Dates can be `2026-01-05` or `05/01/2026`. A name that isn't in the register yet is added as a new member from the month of their first payment.
+Dates can be `2026-01-05` or `05/01/2026`. `month` is the month the payment is for, as `2026-01` or `01/2026`. Without a month column, each payment counts for the month it was received in. A name that isn't in the register yet is added as a new member from the month of their first payment.
 
 ## Project layout
 

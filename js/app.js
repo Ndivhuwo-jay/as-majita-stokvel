@@ -13,6 +13,8 @@
   const STATUS = { good: "Good standing", late: "Late", arrears: "In arrears", expelled: "Expelled", withdrawn: "Withdrawn" };
   const pill = (s) => `<span class="pill st-${s}">${STATUS[s]}</span>`;
   const fmtDate = (iso) => { const d = parseDate(iso); return d ? `${d.d} ${MONTHS[d.m - 1]} ${d.y}` : ""; };
+  const fmtMonth = (p) => { const f = payMonth(p); return f ? `${MONTHS[f.m - 1]} ${f.y}` : ""; };
+  const lateTag = (p) => (isLate(p) ? '<span class="pill st-late">Late</span>' : "");
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
   function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), 2600); }
@@ -38,7 +40,7 @@
   function interestFor(y) { return Number(state.settings["y" + y]?.interest || 0); }
   function years() {
     const ys = new Set([now.getFullYear()]);
-    for (const p of state.payments) { const d = parseDate(p.date); if (d) ys.add(d.y); }
+    for (const p of state.payments) { const f = payMonth(p); if (f) ys.add(f.y); }
     return [...ys].sort((a, b) => b - a);
   }
 
@@ -53,7 +55,7 @@
 
     const payday = new Date(y, 11, RULES.PAYOUT_DAY);
     const days = Math.ceil((payday - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
-    $("#countdown").innerHTML = days > 0 ? `<b>${days}</b> days to the 20 Dec payout` : days === 0 ? `<b>Payout day</b>` : `Paid out 20 Dec ${y}`;
+    $("#countdown").innerHTML = days > 0 ? `<b>${days}</b> days to the ${RULES.PAYOUT_DAY} Dec payout` : days === 0 ? `<b>Payout day</b>` : `Paid out ${RULES.PAYOUT_DAY} Dec ${y}`;
     $("#asOf").textContent = `Ledger for ${y} · rules applied as of ${fmtDate(todayISO)}`;
 
     renderKpis(res); renderCharts(res); renderMonthTable(res); renderLedger(res); renderPayForm(res); renderPayTable(res); renderPayout(res);
@@ -66,7 +68,7 @@
     $("#kpis").innerHTML = `
       <div class="kpi"><span class="label">Collected in ${state.year}</span><span class="v num">${R0(T.collected)}</span><span class="d">${ledger.length} members on the register</span></div>
       <div class="kpi"><span class="label">In the account now</span><span class="v num">${R0(T.balance)}</span><span class="d">Includes ${R0(T.interest)} interest, less ${R0(T.withdrawnOut)} paid to early withdrawals</span></div>
-      <div class="kpi"><span class="label">Projected 20 Dec payout</span><span class="v hero num">${R0(T.decPayoutProj)}</span><span class="d">If active members pay R300 for the remaining months</span></div>
+      <div class="kpi"><span class="label">Projected ${RULES.PAYOUT_DAY} Dec payout</span><span class="v hero num">${R0(T.decPayoutProj)}</span><span class="d">If active members pay R300 for the remaining months</span></div>
       <div class="kpi"><span class="label">Owed to the Stokvel</span><span class="v num ${T.arrears + T.penaltyOwed ? "neg" : ""}">${R0(T.arrears + T.penaltyOwed)}</span><span class="d">${R0(T.arrears)} contributions, ${R0(T.penaltyOwed)} penalties</span></div>
       <div class="kpi"><span class="label">Members</span><div class="chips">${chips || '<span class="d">No members yet</span>'}</div></div>`;
   }
@@ -75,15 +77,15 @@
     if (!window.Chart) return;
     const ink2 = css("--ink-2"), grid = css("--line-2"), s1 = css("--s1"), s2 = css("--s2"), surface = css("--surface");
     Chart.defaults.font.family = css("--font-body"); Chart.defaults.color = ink2;
-    const labels = MONTHS;
+    const labels = MONTHS.slice(0, RULES.LAST_MONTH);
     const tooltip = { callbacks: { label: (c) => `${c.dataset.label}: ${R(c.parsed.y)}` } };
     const scales = (stacked) => ({
       x: { stacked, grid: { display: false }, border: { color: grid } },
       y: { stacked, beginAtZero: true, grid: { color: grid }, border: { display: false }, ticks: { callback: (v) => "R" + Number(v).toLocaleString("en-ZA"), maxTicksLimit: 6 } },
     });
     const barData = [
-      { label: "By the 7th", data: monthTotals.map((m) => m.onTime), backgroundColor: s1, borderRadius: 4, borderSkipped: "start", borderColor: surface, borderWidth: { top: 2 } },
-      { label: "After the 7th", data: monthTotals.map((m) => m.late), backgroundColor: s2, borderRadius: 4, borderSkipped: "start", borderColor: surface, borderWidth: { top: 2 } },
+      { label: "On time", data: monthTotals.map((m) => m.onTime), backgroundColor: s1, borderRadius: 4, borderSkipped: "start", borderColor: surface, borderWidth: { top: 2 } },
+      { label: "Late", data: monthTotals.map((m) => m.late), backgroundColor: s2, borderRadius: 4, borderSkipped: "start", borderColor: surface, borderWidth: { top: 2 } },
     ];
     const lineData = [{ label: "Balance", data: monthTotals.map((m) => (m.closedOrOpen ? m.balance : null)), borderColor: s1, backgroundColor: s1 + "22", fill: true, tension: 0.25, borderWidth: 2, pointRadius: 4, pointBackgroundColor: s1, pointBorderColor: surface, pointBorderWidth: 2, spanGaps: false }];
     const common = { responsive: true, maintainAspectRatio: false, animation: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { display: false }, tooltip } };
@@ -101,18 +103,18 @@
       <td class="r num">${m.paidCount}</td><td class="r num">${m.lateCount || '<span class="dim">0</span>'}</td><td class="r num ${m.missedCount ? "neg" : ""}">${m.missedCount || '<span class="dim">0</span>'}</td>
       <td class="r num">${m.penalties ? R(m.penalties) : '<span class="dim">–</span>'}</td><td class="r num">${m.withdrawals ? R(m.withdrawals) : '<span class="dim">–</span>'}</td><td class="r num"><b>${R(m.balance)}</b></td></tr>`).join("");
     const sum = (k) => monthTotals.reduce((s, m) => s + m[k], 0);
-    $("#monthTable").innerHTML = `<thead><tr><th>Month</th><th class="r">Collected</th><th class="r">By 7th</th><th class="r">Late</th><th class="r">Paid</th><th class="r">Late</th><th class="r">Missed</th><th class="r">Penalties charged</th><th class="r">Withdrawn</th><th class="r">Balance</th></tr></thead>
+    $("#monthTable").innerHTML = `<thead><tr><th>Month</th><th class="r">Collected</th><th class="r">On time</th><th class="r">Late</th><th class="r">Paid</th><th class="r">Late</th><th class="r">Missed</th><th class="r">Penalties charged</th><th class="r">Withdrawn</th><th class="r">Balance</th></tr></thead>
       <tbody>${rows || `<tr><td colspan="10" class="empty">No payments recorded for ${state.year} yet.</td></tr>`}</tbody>
       <tfoot><tr><td>Year</td><td class="r num">${R(totals.collected)}</td><td class="r num">${R(sum("onTime"))}</td><td class="r num">${R(sum("late"))}</td><td></td><td></td><td class="r num">${sum("missedCount")}</td><td class="r num">${R(sum("penalties"))}</td><td class="r num">${R(totals.withdrawnOut)}</td><td class="r num">${R(totals.collected - totals.withdrawnOut)}</td></tr></tfoot>`;
   }
 
-  const CELL_TITLE = { ontime: "paid by the 7th", late: "paid after the 7th", missed: "missed, R50 penalty", overdue: "not paid yet, past the 7th", pending: "due by the 7th", future: "not yet due", na: "before joining", withdrawn: "after withdrawal", expelled: "after expulsion" };
+  const CELL_TITLE = { ontime: "paid on time", late: "paid after the 7th of the next month", missed: "missed, R50 penalty", pending: "due by the 7th of the next month", future: "not yet due", na: "before joining", withdrawn: "after withdrawal", expelled: "after expulsion" };
   function cellsHtml(cells) {
     return `<div class="months">${cells.map((c) => `<span class="mc ${c.state}" title="${MONTHS[c.m - 1]}: ${CELL_TITLE[c.state]}${c.paid ? " · " + R(c.paid) : ""}">${c.state === "missed" ? "×" : ""}</span>`).join("")}</div>`;
   }
 
   function renderLedger({ ledger }) {
-    const head = `<thead><tr><th>Member</th><th>Status</th><th><div class="monthhead">${MONTHS.map((m) => `<span>${m[0]}</span>`).join("")}</div></th><th class="r">Paid</th><th class="r">Savings</th><th class="r">To settle</th><th class="r">Months</th></tr></thead>`;
+    const head = `<thead><tr><th>Member</th><th>Status</th><th><div class="monthhead">${MONTHS.slice(0, RULES.LAST_MONTH).map((m) => `<span>${m[0]}</span>`).join("")}</div></th><th class="r">Paid</th><th class="r">Savings</th><th class="r">To settle</th><th class="r">Months</th></tr></thead>`;
     if (!ledger.length) { $("#ledgerTable").innerHTML = head + `<tbody><tr><td colspan="7" class="empty">${db ? "No members yet. Add the first member below." : "Records load once you are signed in."}</td></tr></tbody>`; return; }
     const order = { arrears: 0, late: 1, good: 2, withdrawn: 3, expelled: 4 };
     const rows = [...ledger].sort((a, b) => order[a.status] - order[b.status] || a.name.localeCompare(b.name)).map((r) => {
@@ -131,14 +133,14 @@
 
   function detailHtml(r) {
     const mem = state.members.find((m) => m.id === r.id) || {};
-    const pays = state.payments.filter((p) => p.memberId === r.id && parseDate(p.date)?.y === state.year).sort((a, b) => (a.date < b.date ? -1 : 1));
+    const pays = state.payments.filter((p) => p.memberId === r.id && payMonth(p)?.y === state.year).sort((a, b) => (a.date < b.date ? -1 : 1));
     const missed = r.cells.filter((c) => c.state === "missed").map((c) => MONTHS[c.m - 1]);
     let note = "";
     if (r.status === "expelled") note = `Expelled automatically after three missed months in a row (ending ${MONTHS[r.expelledMonth - 1]}). ${R(r.forfeited)} in savings is forfeited to the Stokvel (9.2).`;
     else if (r.status === "withdrawn") note = `Withdrew on ${fmtDate(r.withdrawn)}. Received ${R(r.savings)}${r.penaltyOwed ? ` after ${R(r.penaltyOwed)} penalties were deducted` : ""}. ${r.monthsContributed >= RULES.INTEREST_MIN_MONTHS ? "Qualifies for interest." : "Does not qualify for interest (7.3)."}`;
     else if (r.arrears + r.penaltyOwed > 0) note = `To get back in good standing, pay ${R(r.arrears + r.penaltyOwed)}${r.penaltyOwed ? ` (${R(r.arrears)} contributions + ${R(r.penaltyOwed)} penalties)` : ""}, plus R300 for each new month.`;
     else note = r.credit ? `Ahead by ${R(r.credit)} above the R300 minimum. Extra contributions count as savings.` : "Up to date.";
-    const payRows = pays.map((p) => `<tr><td class="num">${fmtDate(p.date)}</td><td class="r num">${R(p.amount)}</td><td>${parseDate(p.date).d > RULES.CUTOFF_DAY ? '<span class="pill st-late">Late</span>' : ""}</td><td class="muted">${esc(p.note || "")}</td><td class="r writer"><button class="btn sm danger" data-delpay="${esc(p.id)}">Delete</button></td></tr>`).join("");
+    const payRows = pays.map((p) => `<tr><td class="num">${fmtDate(p.date)}</td><td>${fmtMonth(p)}</td><td class="r num">${R(p.amount)}</td><td>${lateTag(p)}</td><td class="muted">${esc(p.note || "")}</td><td class="r writer"><button class="btn sm danger" data-delpay="${esc(p.id)}">Delete</button></td></tr>`).join("");
     return `<div class="detail">
       <p>${note}</p>
       <div class="facts">
@@ -149,7 +151,7 @@
         <div><span class="label">Late months</span><b>${r.lateCount}</b></div>
         <div><span class="label">Savings</span><b>${r.status === "expelled" ? "Forfeited" : R(r.savings)}</b></div>
       </div>
-      <div class="tablewrap"><table><thead><tr><th>Date</th><th class="r">Amount</th><th></th><th>Note</th><th class="writer"></th></tr></thead><tbody>${payRows || `<tr><td colspan="5" class="dim">No payments in ${state.year}.</td></tr>`}</tbody></table></div>
+      <div class="tablewrap"><table><thead><tr><th>Date</th><th>For</th><th class="r">Amount</th><th></th><th>Note</th><th class="writer"></th></tr></thead><tbody>${payRows || `<tr><td colspan="6" class="dim">No payments in ${state.year}.</td></tr>`}</tbody></table></div>
       <div class="row writer">
         ${r.status === "withdrawn" ? `<button class="btn sm" data-unwithdraw="${esc(r.id)}">Undo withdrawal</button>` : r.status !== "expelled" ? `<label class="hint" for="wd-${esc(r.id)}">Withdrawal date</label><input type="date" id="wd-${esc(r.id)}" value="${todayISO}" style="width:auto"><button class="btn sm" data-withdraw="${esc(r.id)}">Record withdrawal</button>` : ""}
         <button class="btn sm danger" data-delmember="${esc(r.id)}">Remove member and payments</button>
@@ -191,30 +193,44 @@
     const sel = $("#pMember"); const cur = sel.value;
     sel.innerHTML = state.members.length ? memberOptions(cur) : `<option value="">Add a member first</option>`;
     if (!$("#pDate").value) $("#pDate").value = todayISO;
+    if (!$("#pMonth").options.length) fillPayMonths();
     $("#payFilter").innerHTML = memberOptions(state.filter, true);
     updateSuggest();
   }
+  // Offer the months around the date received; up to the 7th it most likely pays for last month.
+  // December is never offered: in December it is November's payment, in early January it is January's.
+  function fillPayMonths() {
+    const d = parseDate($("#pDate").value) || parseDate(todayISO);
+    const ym = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}`;
+    const opts = [];
+    for (let k = -3; k <= 1; k++) { const dt = new Date(d.y, d.m - 1 + k, 1); if (dt.getMonth() + 1 <= RULES.LAST_MONTH) opts.push(ym(dt)); }
+    let t = new Date(d.y, d.m - 1 - (d.d <= RULES.CUTOFF_DAY ? 1 : 0), 1);
+    if (t.getMonth() + 1 > RULES.LAST_MONTH) t = d.m === 12 ? new Date(d.y, RULES.LAST_MONTH - 1, 1) : new Date(d.y, d.m - 1, 1);
+    const pick = ym(t);
+    $("#pMonth").innerHTML = opts.map((v) => `<option value="${v}" ${v === pick ? "selected" : ""}>${fmtMonth({ month: v })}</option>`).join("");
+  }
+  $("#pDate").addEventListener("change", fillPayMonths);
   function updateSuggest() {
     const r = state.res?.ledger.find((l) => l.id === $("#pMember").value);
     if (!r) { $("#suggest").textContent = ""; return; }
     const owe = r.arrears + r.penaltyOwed;
-    const cur = r.cells.find((c) => c.m === state.res.cm);
-    const curDue = cur && (cur.state === "pending" || cur.state === "overdue");
+    const open = r.cells.find((c) => c.state === "pending");
+    const openDue = open ? ` R300 for ${MONTHS[open.m - 1]} is due by ${fmtDate(deadline(state.year, open.m))}.` : "";
     $("#suggest").innerHTML = r.status === "expelled" ? `${esc(r.name)} was expelled. Payments are no longer due.` :
       r.status === "withdrawn" ? `${esc(r.name)} has withdrawn.` :
-      owe > 0 ? `${esc(r.name)} owes <b>${R(owe)}</b>${r.penaltyOwed ? ` including ${R(r.penaltyOwed)} in penalties` : ""}.${curDue ? " This month's R300 is part of that." : ""}` :
-      curDue ? `${esc(r.name)} owes R300 for ${MONTHS[state.res.cm - 1]}${cur.state === "overdue" ? ", now late" : ""}.` : `${esc(r.name)} is up to date.`;
+      owe > 0 ? `${esc(r.name)} owes <b>${R(owe)}</b>${r.penaltyOwed ? ` including ${R(r.penaltyOwed)} in penalties` : ""}.${openDue}` :
+      open ? `${esc(r.name)} is up to date.${openDue}` : `${esc(r.name)} is up to date.`;
   }
   $("#pMember").addEventListener("change", updateSuggest);
 
   function renderPayTable() {
-    let pays = state.payments.filter((p) => parseDate(p.date)?.y === state.year);
+    let pays = state.payments.filter((p) => payMonth(p)?.y === state.year);
     if (state.filter) pays = pays.filter((p) => p.memberId === state.filter);
     pays.sort((a, b) => (a.date < b.date ? 1 : -1));
     const name = (id) => state.members.find((m) => m.id === id)?.name || "Unknown member";
-    $("#payTable").innerHTML = `<thead><tr><th>Date</th><th>Member</th><th class="r">Amount</th><th></th><th>Note</th><th class="writer"></th></tr></thead><tbody>` +
-      (pays.map((p) => `<tr><td class="num">${fmtDate(p.date)}</td><td>${esc(name(p.memberId))}</td><td class="r num">${R(p.amount)}</td><td>${parseDate(p.date).d > RULES.CUTOFF_DAY ? '<span class="pill st-late">Late</span>' : ""}</td><td class="muted">${esc(p.note || "")}</td><td class="r writer"><button class="btn sm danger" data-delpay="${esc(p.id)}">Delete</button></td></tr>`).join("") ||
-      `<tr><td colspan="6" class="empty">No payments for ${state.year} yet. Record one above or import a CSV.</td></tr>`) + `</tbody>`;
+    $("#payTable").innerHTML = `<thead><tr><th>Date</th><th>Member</th><th>For</th><th class="r">Amount</th><th></th><th>Note</th><th class="writer"></th></tr></thead><tbody>` +
+      (pays.map((p) => `<tr><td class="num">${fmtDate(p.date)}</td><td>${esc(name(p.memberId))}</td><td>${fmtMonth(p)}</td><td class="r num">${R(p.amount)}</td><td>${lateTag(p)}</td><td class="muted">${esc(p.note || "")}</td><td class="r writer"><button class="btn sm danger" data-delpay="${esc(p.id)}">Delete</button></td></tr>`).join("") ||
+      `<tr><td colspan="7" class="empty">No payments for ${state.year} yet. Record one above or import a CSV.</td></tr>`) + `</tbody>`;
   }
   $("#payTable").addEventListener("click", (e) => { const b = e.target.closest("button[data-delpay]"); if (b) memberAction(b); });
   $("#payFilter").addEventListener("change", (e) => { state.filter = e.target.value; renderPayTable(); });
@@ -226,16 +242,16 @@
       <td class="r num">${R(r.contributions)}</td><td class="r num ${r.penaltyOwed ? "neg" : "dim"}">${r.penaltyOwed ? "−" + R(r.penaltyOwed) : "–"}</td>
       <td class="r num">${R(r.savingsInterest)}</td><td class="r num">${R(r.payoutNow)}</td><td class="r num"><b>${R(r.payoutProj)}</b>${r.status === "withdrawn" ? `<div class="hint">${R(r.savings)} paid ${fmtDate(r.withdrawn)}</div>` : ""}</td></tr>`).join("");
     const exp = ledger.filter((r) => r.status === "expelled").map((r) => `<tr class="dim"><td>${esc(r.name)}</td><td>${pill("expelled")}</td><td class="r num">${r.monthsContributed}</td><td>–</td><td class="r num">${R(r.contributions)}</td><td></td><td></td><td class="r num">${R(0)}</td><td class="r num">Forfeited</td></tr>`).join("");
-    $("#payoutTable").innerHTML = `<thead><tr><th>Member</th><th>Status</th><th class="r">Months paid</th><th>Interest</th><th class="r">Savings now</th><th class="r">Penalty deduction</th><th class="r">Interest now</th><th class="r">Payout if today</th><th class="r">Projected 20 Dec</th></tr></thead>
+    $("#payoutTable").innerHTML = `<thead><tr><th>Member</th><th>Status</th><th class="r">Months paid</th><th>Interest</th><th class="r">Savings now</th><th class="r">Penalty deduction</th><th class="r">Interest now</th><th class="r">Payout if today</th><th class="r">Projected ${RULES.PAYOUT_DAY} Dec</th></tr></thead>
       <tbody>${rows + exp || `<tr><td colspan="9" class="empty">No members yet.</td></tr>`}</tbody>
-      <tfoot><tr><td colspan="7">Paid out on 20 December</td><td class="r num">${R(T.decPayoutNow)}</td><td class="r num">${R(T.decPayoutProj)}</td></tr></tfoot>`;
+      <tfoot><tr><td colspan="7">Paid out on ${RULES.PAYOUT_DAY} December</td><td class="r num">${R(T.decPayoutNow)}</td><td class="r num">${R(T.decPayoutProj)}</td></tr></tfoot>`;
     const ii = $("#interestIn"); if (document.activeElement !== ii) ii.value = T.interest || "";
     $("#fundCalc").innerHTML = `
       <div><span>Collected so far</span><span class="num">${R(T.collected)}</span></div>
       <div><span>Still to come (R300 × remaining months)</span><span class="num">${R(T.futureContrib)}</span></div>
       <div><span>Interest</span><span class="num">${R(T.interest)}</span></div>
       <div><span>Paid to early withdrawals</span><span class="num">−${R(T.withdrawnOut)}</span></div>
-      <div class="total"><span>Expected in the account on 20 Dec</span><span class="num">${R(T.balanceProj)}</span></div>
+      <div class="total"><span>Expected in the account on ${RULES.PAYOUT_DAY} Dec</span><span class="num">${R(T.balanceProj)}</span></div>
       <div><span>Paid out to members</span><span class="num">−${R(T.decPayoutProj)}</span></div>
       <div class="total"><span>Left with the Stokvel</span><span class="num">${R(T.fundProj)}</span></div>`;
     $("#fundKept").innerHTML = `
@@ -259,13 +275,14 @@
 
   $("#payForm").addEventListener("submit", async (e) => {
     e.preventDefault(); if (!db) { toast("Not connected to the database"); return; }
-    const memberId = $("#pMember").value, date = $("#pDate").value, amount = Number($("#pAmount").value);
+    const memberId = $("#pMember").value, date = $("#pDate").value, month = $("#pMonth").value, amount = Number($("#pAmount").value);
     if (!memberId || !date || !(amount > 0)) { toast("Choose a member, a date and an amount"); return; }
     try {
       // Firestore resolves add() only once the server has the record; don't wait forever if it can't be reached
       const noReply = new Promise((_, reject) => setTimeout(() => reject(new Error("no reply from the database, check your internet connection")), 15000));
-      await Promise.race([db.collection("payments").add({ memberId, date, amount, note: $("#pNote").value.trim(), createdAt: new Date().toISOString() }), noReply]);
-      $("#pNote").value = ""; toast(`${R(amount)} saved${window.STOKVEL_BACKEND ? " to " + window.STOKVEL_BACKEND : " in this browser only"}${parseDate(date).d > RULES.CUTOFF_DAY ? " (late, after the 7th)" : ""}`); }
+      await Promise.race([db.collection("payments").add({ memberId, date, month, amount, note: $("#pNote").value.trim(), createdAt: new Date().toISOString() }), noReply]);
+      const f = payMonth({ month });
+      $("#pNote").value = ""; toast(`${R(amount)} for ${fmtMonth({ month })} saved${window.STOKVEL_BACKEND ? " to " + window.STOKVEL_BACKEND : " in this browser only"}${isLate({ date, month }) ? ` (late, after ${fmtDate(deadline(f.y, f.m))})` : ""}`); }
     catch (err) { toast("Could not save: " + (err.message || err.code)); }
   });
 
@@ -294,6 +311,12 @@
     if ((m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(s))) return `${m[3]}-${pad(m[2])}-${pad(m[1])}`;
     return null;
   }
+  function normMonth(s) {
+    s = s.trim(); let m;
+    if ((m = /^(\d{4})[-/](\d{1,2})$/.exec(s)) && +m[2] >= 1 && +m[2] <= 12) return `${m[1]}-${pad(m[2])}`;
+    if ((m = /^(\d{1,2})[-/](\d{4})$/.exec(s)) && +m[1] >= 1 && +m[1] <= 12) return `${m[2]}-${pad(m[1])}`;
+    return null;
+  }
   async function offerFile(filename, text, title) {
     const dl = await claude.use("downloads").catch(() => null);
     if (dl) { try { await dl.save({ filename, data: text }); toast("Saved " + filename); return; } catch (err) { if (err?.code === "declined") return; } }
@@ -301,13 +324,13 @@
   }
   $("#exportPayments").addEventListener("click", () => {
     const name = (id) => state.members.find((m) => m.id === id)?.name || "";
-    const rows = state.payments.filter((p) => parseDate(p.date)?.y === state.year).sort((a, b) => (a.date < b.date ? -1 : 1)).map((p) => [name(p.memberId), p.date, p.amount, p.note || ""]);
-    offerFile(`as-majita-payments-${state.year}.csv`, toCsv([["member", "date", "amount", "note"], ...rows]), "Payments CSV");
+    const rows = state.payments.filter((p) => payMonth(p)?.y === state.year).sort((a, b) => (a.date < b.date ? -1 : 1)).map((p) => [name(p.memberId), p.date, p.month || p.date.slice(0, 7), p.amount, p.note || ""]);
+    offerFile(`as-majita-payments-${state.year}.csv`, toCsv([["member", "date", "month", "amount", "note"], ...rows]), "Payments CSV");
   });
   $("#exportLedger").addEventListener("click", () => {
     const L = state.res.ledger;
     const rows = L.map((r) => [r.name, STATUS[r.status], ...r.cells.map((c) => c.paid || (c.state === "missed" ? "missed" : "")), r.totalPaid, r.penaltiesCharged, r.penaltiesPaid, r.arrears, r.savings, r.monthsContributed, r.projSavingsQualifies ? "yes" : "no", r.payoutNow.toFixed(2), r.payoutProj.toFixed(2)]);
-    offerFile(`as-majita-ledger-${state.year}.csv`, toCsv([["member", "status", ...MONTHS, "total paid", "penalties charged", "penalties paid", "arrears", "savings", "months contributed", "qualifies for interest", "payout if today", "projected 20 Dec"], ...rows]), "Ledger CSV");
+    offerFile(`as-majita-ledger-${state.year}.csv`, toCsv([["member", "status", ...MONTHS.slice(0, RULES.LAST_MONTH), "total paid", "penalties charged", "penalties paid", "arrears", "savings", "months contributed", "qualifies for interest", "payout if today", `projected ${RULES.PAYOUT_DAY} Dec`], ...rows]), "Ledger CSV");
   });
   $("#copyCsv").addEventListener("click", () => { const t = $("#exportText"); navigator.clipboard?.writeText(t.value).then(() => toast("Copied"), () => { t.select(); toast("Press Ctrl+C to copy"); }); });
 
@@ -318,17 +341,19 @@
     if (!rows.length) { $("#csvMsg").textContent = "Paste or choose a CSV first."; return; }
     const h = rows[0].map((c) => c.trim().toLowerCase());
     const hasHead = h.some((c) => ["member", "name", "date", "amount"].includes(c));
-    const ix = hasHead ? { n: h.findIndex((c) => c === "member" || c === "name"), d: h.indexOf("date"), a: h.indexOf("amount"), t: h.indexOf("note") } : { n: 0, d: 1, a: 2, t: 3 };
+    const ix = hasHead ? { n: h.findIndex((c) => c === "member" || c === "name"), d: h.indexOf("date"), mo: h.indexOf("month"), a: h.indexOf("amount"), t: h.indexOf("note") } : { n: 0, d: 1, mo: -1, a: 2, t: 3 };
     if (ix.n < 0 || ix.d < 0 || ix.a < 0) { $("#csvMsg").textContent = "The header needs member, date and amount columns."; return; }
     const good = [], bad = [];
     (hasHead ? rows.slice(1) : rows).forEach((r, i) => {
       const name = (r[ix.n] || "").trim(), date = normDate(r[ix.d] || ""), amount = Number(String(r[ix.a] || "").replace(/[R\s]/gi, "").replace(",", "."));
-      if (name && date && amount > 0) good.push({ name, date, amount, note: ix.t >= 0 ? (r[ix.t] || "").trim() : "" }); else bad.push(i + (hasHead ? 2 : 1));
+      // No month column means the payment counts for the month it was received in
+      const mo = ix.mo >= 0 && (r[ix.mo] || "").trim() ? normMonth(r[ix.mo]) : date && date.slice(0, 7);
+      if (name && date && mo && amount > 0) good.push({ name, date, month: mo, amount, note: ix.t >= 0 ? (r[ix.t] || "").trim() : "" }); else bad.push(i + (hasHead ? 2 : 1));
     });
     const known = new Set(state.members.map((m) => m.name.toLowerCase()));
     const newNames = [...new Set(good.map((g) => g.name).filter((n) => !known.has(n.toLowerCase())))];
     state.csvRows = good;
-    $("#csvMsg").textContent = `${good.length} payments ready${newNames.length ? `, ${newNames.length} new members (${newNames.slice(0, 4).join(", ")}${newNames.length > 4 ? "…" : ""})` : ""}${bad.length ? `. Skipped lines ${bad.slice(0, 8).join(", ")}: they need a name, a date and an amount.` : "."}`;
+    $("#csvMsg").textContent = `${good.length} payments ready${newNames.length ? `, ${newNames.length} new members (${newNames.slice(0, 4).join(", ")}${newNames.length > 4 ? "…" : ""})` : ""}${bad.length ? `. Skipped lines ${bad.slice(0, 8).join(", ")}: they need a name, a date and an amount, and a month like 2026-10 if given.` : "."}`;
     $("#csvImport").disabled = !good.length || !db;
   }
   $("#csvImport").addEventListener("click", async () => {
@@ -338,11 +363,11 @@
       const byName = new Map(state.members.map((m) => [m.name.toLowerCase(), m.id]));
       const first = {}; for (const r of rows) { const k = r.name.toLowerCase(); if (!first[k] || r.date < first[k].date) first[k] = r; }
       for (const k in first) if (!byName.has(k)) {
-        const ref = await db.collection("members").add({ name: first[k].name, joined: first[k].date.slice(0, 7) + "-01", role: null, withdrawn: null, createdAt: new Date().toISOString() });
+        const ref = await db.collection("members").add({ name: first[k].name, joined: first[k].month + "-01", role: null, withdrawn: null, createdAt: new Date().toISOString() });
         byName.set(k, ref.id);
       }
       let n = 0;
-      for (const r of rows) { await db.collection("payments").add({ memberId: byName.get(r.name.toLowerCase()), date: r.date, amount: r.amount, note: r.note, createdAt: new Date().toISOString() }); n++; if (n % 10 === 0) $("#csvMsg").textContent = `Importing… ${n}/${rows.length}`; }
+      for (const r of rows) { await db.collection("payments").add({ memberId: byName.get(r.name.toLowerCase()), date: r.date, month: r.month, amount: r.amount, note: r.note, createdAt: new Date().toISOString() }); n++; if (n % 10 === 0) $("#csvMsg").textContent = `Importing… ${n}/${rows.length}`; }
       $("#csvMsg").textContent = `Imported ${n} payments.`; $("#csvText").value = ""; state.csvRows = null; toast(`Imported ${n} payments`);
     } catch (err) { $("#csvMsg").textContent = "Import stopped: " + (err.message || err.code); }
   });
