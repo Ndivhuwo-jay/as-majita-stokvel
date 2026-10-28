@@ -52,7 +52,7 @@ The Firebase web config is not a secret. Access is controlled by `firestore.rule
 |---|---|
 | 4.1–4.4 | R300 a month from January to November (no December contribution), each due by the 7th of the next month (October by 7 November). Each payment is recorded for the month it pays for. A month whose first payment arrives after its due date is marked late. Paying more than R300 adds to savings. |
 | 5.1–5.2 | A month with no payment at all by the 7th of the next month is missed and costs a R50 penalty. The next payment settles the penalty first. Catching up after one missed month is R300 + R50 + R300 = R650. |
-| 6 | Payout on 15 December: savings plus share of interest. |
+| 6 | Payout on 15 December: savings plus share of interest. Interest is the account balance the treasurer enters (from the bank app) minus the money recorded in the app, less early withdrawals paid out. |
 | 7.1, 7.4 | A withdrawing member receives their savings less any unpaid penalties. Nothing is due after the withdrawal month. |
 | 7.2 | Penalties still unpaid on 15 December are deducted from that member's savings. |
 | 7.3, 8.1–8.2 | Interest is shared in proportion to savings, only among members who contributed in more than 7 months (8 or more). |

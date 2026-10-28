@@ -274,9 +274,11 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
       <div class="panel">
         <div class="panel-head"><h2>15 December payout</h2><span class="hint">Projection assumes every active member pays R300 on time up to November</span></div>
         <div class="writer row" style="margin-bottom:14px">
-          <div class="field" style="max-width:260px"><label for="interestIn">Interest earned this year (R, from bank statement)</label><input id="interestIn" type="number" min="0" step="0.01"></div>
-          <button class="btn" id="saveInterest" style="align-self:end">Save interest</button>
+          <div class="field" style="max-width:260px"><label for="bankIn">Stokvel account balance (R, from the bank app)</label><input id="bankIn" type="number" min="0" step="0.01"></div>
+          <div class="field" style="max-width:180px"><label for="bankDate">Balance on</label><input id="bankDate" type="date"></div>
+          <button class="btn" id="saveInterest" style="align-self:end">Save balance</button>
         </div>
+        <p class="hint" id="interestNote" style="margin:-4px 0 14px"></p>
         <div class="tablewrap"><table id="payoutTable"></table></div>
       </div>
       <div class="grid2">
@@ -296,7 +298,7 @@ textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8
           <div class="rule"><span class="clause">7</span><div><p><b>Early withdrawal.</b> A withdrawing member gets their savings on the day they leave, less any penalties still owed (7.4). No contributions are due after the withdrawal month. They only share in interest if they contributed for more than 7 months (7.3).</p><p><b>Stopping without withdrawing (7.2).</b> Each missed month adds a R50 penalty. Penalties still unpaid on 15 December are deducted from that member's savings.</p></div></div>
           <div class="rule"><span class="clause">8</span><div><p><b>Interest.</b> Interest is shared in proportion to savings, only among members who contributed in more than 7 months of the year (8 or more).</p></div></div>
           <div class="rule"><span class="clause">9</span><div><p><b>Expulsion.</b> Three missed months in a row means automatic expulsion. The member forfeits all savings, which stay with the Stokvel. The secretary records it in writing (9.3).</p></div></div>
-          <div class="rule"><span class="clause">10</span><div><p><b>Office bearers.</b> Chairperson Zwivhuya Rammela, Treasurer Vhanga Mudzunga, Secretary Ovhonala Makhera. The treasurer records payments and the interest figure here.</p></div></div>
+          <div class="rule"><span class="clause">10</span><div><p><b>Office bearers.</b> Chairperson Zwivhuya Rammela, Treasurer Vhanga Mudzunga, Secretary Ovhonala Makhera. The treasurer records payments and the account balance from the bank here. Interest is the balance minus the money recorded.</p></div></div>
         </div>
       </div>
     </section>

@@ -37,7 +37,12 @@
   if (!TABS.includes(startTab)) { try { startTab = localStorage.getItem("tab") || "overview"; } catch { startTab = "overview"; } }
   showTab(startTab);
 
-  function interestFor(y) { return Number(state.settings["y" + y]?.interest || 0); }
+  // Interest is whatever the bank holds above the money recorded here (paid in, less early withdrawals paid out)
+  function interestFor(y, totals) {
+    const s = state.settings["y" + y] || {};
+    if (s.bankBalance == null) return Number(s.interest || 0);
+    return Math.max(0, Number(s.bankBalance) - (totals.collected - totals.withdrawnOut));
+  }
   function years() {
     const ys = new Set([now.getFullYear()]);
     for (const p of state.payments) { const f = payMonth(p); if (f) ys.add(f.y); }
@@ -46,7 +51,8 @@
 
   function render() {
     const y = state.year;
-    const res = computeYear({ members: state.members, payments: state.payments, year: y, interest: interestFor(y), today: todayISO });
+    const args = { members: state.members, payments: state.payments, year: y, today: todayISO };
+    const res = computeYear({ ...args, interest: interestFor(y, computeYear({ ...args, interest: 0 }).totals) });
     state.res = res;
     document.querySelectorAll(".yr").forEach((e) => (e.textContent = y));
 
@@ -245,7 +251,15 @@
     $("#payoutTable").innerHTML = `<thead><tr><th>Member</th><th>Status</th><th class="r">Months paid</th><th>Interest</th><th class="r">Savings now</th><th class="r">Penalty deduction</th><th class="r">Interest now</th><th class="r">Payout if today</th><th class="r">Projected ${RULES.PAYOUT_DAY} Dec</th></tr></thead>
       <tbody>${rows + exp || `<tr><td colspan="9" class="empty">No members yet.</td></tr>`}</tbody>
       <tfoot><tr><td colspan="7">Paid out on ${RULES.PAYOUT_DAY} December</td><td class="r num">${R(T.decPayoutNow)}</td><td class="r num">${R(T.decPayoutProj)}</td></tr></tfoot>`;
-    const ii = $("#interestIn"); if (document.activeElement !== ii) ii.value = T.interest || "";
+    const s = state.settings["y" + state.year] || {};
+    const bi = $("#bankIn"); if (document.activeElement !== bi) bi.value = s.bankBalance ?? "";
+    const bd = $("#bankDate"); if (document.activeElement !== bd) bd.value = s.bankDate || todayISO;
+    const held = T.collected - T.withdrawnOut;
+    const gap = s.bankBalance == null ? 0 : Number(s.bankBalance) - held;
+    $("#interestNote").innerHTML = s.bankBalance == null
+      ? (T.interest ? `Interest: <b>${R(T.interest)}</b>. Enter the account balance to work it out from the bank.` : "Enter the account balance from the bank app to include interest.")
+      : `Bank ${R(s.bankBalance)}${s.bankDate ? ` on ${fmtDate(s.bankDate)}` : ""} − ${R(held)} recorded here${T.withdrawnOut ? " (after early withdrawals)" : ""} = <b>${R(T.interest)} interest</b>, shared by the members who qualify.` +
+        (gap < 0 ? ` <span class="neg">The bank holds ${R(-gap)} less than recorded: check for payments recorded but not in the bank, or bank fees.</span>` : "");
     $("#fundCalc").innerHTML = `
       <div><span>Collected so far</span><span class="num">${R(T.collected)}</span></div>
       <div><span>Still to come (R300 × remaining months)</span><span class="num">${R(T.futureContrib)}</span></div>
@@ -287,8 +301,9 @@
   });
 
   $("#saveInterest").addEventListener("click", async () => {
-    if (!db) return; const v = Number($("#interestIn").value) || 0;
-    try { await db.doc("settings/y" + state.year).set({ interest: v, year: state.year }); toast("Interest saved"); } catch (err) { toast("Could not save: " + (err.message || err.code)); }
+    if (!db) return; const v = $("#bankIn").value;
+    if (v === "" || !(Number(v) >= 0)) { toast("Enter the account balance"); return; }
+    try { await db.doc("settings/y" + state.year).set({ bankBalance: Number(v), bankDate: $("#bankDate").value || todayISO, year: state.year }); toast("Balance saved"); } catch (err) { toast("Could not save: " + (err.message || err.code)); }
   });
 
   const csvCell = (v) => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
