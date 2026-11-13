@@ -397,8 +397,11 @@
     db = await claude.use("db");
     if (!db) { $("#noDb").hidden = false; render(); return; }
     const user = await claude.use("user");
-    if (window.stokvelAuth) { $("#signOut").hidden = false; $("#signOut").title = user?.email || ""; }
     const can = user ? await user.can("data.write") : null;
+    if (window.stokvelAuth) {
+      $("#signIn").hidden = !!user?.email; $("#signOut").hidden = !user?.email; $("#signOut").title = user?.email || "";
+      if (user?.email && !can) toast(`${user.email} can view but not edit`);
+    }
     setWriter(can !== false);
     const sub = (path, key) => db.collection(path).onSnapshot((snap) => {
       if (key === "settings") { state.settings = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])); }

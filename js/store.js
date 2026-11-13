@@ -12,7 +12,14 @@
 
   if (window.FIREBASE_CONFIG && window.firebase) {
     firebase.initializeApp(window.FIREBASE_CONFIG);
+    const auth = firebase.auth();
     const fs = firebase.firestore();
+    const admins = (window.STOKVEL_ADMINS || []).map((e) => e.toLowerCase());
+    const isAdmin = (u) => !!u && admins.includes((u.email || "").toLowerCase());
+    let first = true;
+    const ready = new Promise((resolve) => auth.onAuthStateChanged((u) => {
+      if (first) { first = false; resolve(u); } else location.reload();
+    }));
     const seedIfEmpty = async () => {
       if (!(await fs.collection("members").limit(1).get()).empty) return;
       const b = fs.batch();
@@ -20,13 +27,18 @@
       for (const { id, ...d } of seed.payments) b.set(fs.doc("payments/" + id), d);
       await b.commit();
     };
-    // No sign-in: everyone shares the same Firestore records
+    // Anyone can view without signing in; only the admins listed in firebase-config.js can edit
     window.STOKVEL_BACKEND = "Firestore";
-    const seeded = seedIfEmpty().catch(() => {});
+    window.stokvelAuth = {
+      ready,
+      signIn: () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()),
+      signOut: () => auth.signOut(),
+    };
     window.claude = {
       use: async (name) => {
-        if (name === "db") { await seeded; return fs; }
-        if (name === "user") return { can: async () => true };
+        const u = await ready;
+        if (name === "db") { if (isAdmin(u)) await seedIfEmpty().catch(() => {}); return fs; }
+        if (name === "user") return { email: u?.email, can: async () => isAdmin(u) };
         if (name === "downloads") return downloads;
         return null;
       },
